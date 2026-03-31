@@ -19,8 +19,24 @@ jobs:
         java-version: '11'
         distribution: 'adopt'
     
+    - name: Create Gradle wrapper
+      run: |
+        mkdir -p gradle/wrapper
+        echo "distributionBase=GRADLE_USER_HOME" > gradle/wrapper/gradle-wrapper.properties
+        echo "distributionPath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
+        echo "zipStoreBase=GRADLE_USER_HOME" >> gradle/wrapper/gradle-wrapper.properties
+        echo "zipStorePath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
+        echo "distributionUrl=https://services.gradle.org/distributions/gradle-7.0.2-bin.zip" >> gradle/wrapper/gradle-wrapper.properties
+        curl -L -o gradle/wrapper/gradle-wrapper.jar https://services.gradle.org/distributions/gradle-7.0.2-bin.zip
+        unzip gradle/wrapper/gradle-wrapper.jar -d gradle/wrapper/
+        rm gradle/wrapper/gradle-wrapper.jar
+        curl -L -o gradle/wrapper/gradle-wrapper.jar https://repo1.maven.org/maven2/org/gradle/wrapper/gradle-wrapper/7.0.2/gradle-wrapper-7.0.2.jar
+    
+    - name: Make Gradle wrapper executable
+      run: chmod +x ./gradlew || true
+    
     - name: Build with Gradle
-      run: ./gradlew assembleDebug
+      run: ./gradlew assembleDebug --stacktrace --info
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
