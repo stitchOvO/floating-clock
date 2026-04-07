@@ -29,13 +29,15 @@ public class FloatingService extends Service {
     private TextView timeText;
     private Handler handler;
     private Runnable timeRunnable;
+    private WindowManager.LayoutParams params;
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
-
+    private void setupNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel("floating_clock", "Floating Clock", NotificationManager.IMPORTANCE_LOW);
+            NotificationChannel channel = new NotificationChannel(
+                    "floating_clock", 
+                    "Floating Clock", 
+                    NotificationManager.IMPORTANCE_LOW
+            );
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
                 manager.createNotificationChannel(channel);
@@ -49,12 +51,19 @@ public class FloatingService extends Service {
 
             startForeground(1, notification);
         }
+    }
 
+    private void setupFloatingView() {
         windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         floatingView = LayoutInflater.from(this).inflate(R.layout.floating_clock, null);
         timeText = floatingView.findViewById(R.id.time_text);
 
-        final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+        params = createWindowParams();
+        windowManager.addView(floatingView, params);
+    }
+
+    private WindowManager.LayoutParams createWindowParams() {
+        WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ?
@@ -67,9 +76,11 @@ public class FloatingService extends Service {
         params.gravity = Gravity.TOP | Gravity.START;
         params.x = 100;
         params.y = 100;
+        
+        return params;
+    }
 
-        windowManager.addView(floatingView, params);
-
+    private void setupDragListener() {
         floatingView.setOnTouchListener(new View.OnTouchListener() {
             private int initialX;
             private int initialY;
@@ -95,7 +106,9 @@ public class FloatingService extends Service {
                 }
             }
         });
+    }
 
+    private void startClockUpdate() {
         handler = new Handler(Looper.getMainLooper());
         timeRunnable = new Runnable() {
             @Override
@@ -105,6 +118,16 @@ public class FloatingService extends Service {
             }
         };
         handler.post(timeRunnable);
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        
+        setupNotificationChannel();
+        setupFloatingView();
+        setupDragListener();
+        startClockUpdate();
     }
 
     private void updateTime() {
